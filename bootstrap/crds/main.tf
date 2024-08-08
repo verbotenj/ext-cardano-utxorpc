@@ -23,11 +23,6 @@ resource "kubernetes_manifest" "customresourcedefinition_utxorpcports_demeter_ru
         {
           "additionalPrinterColumns" = [
             {
-              "jsonPath" = ".spec.operatorVersion"
-              "name" = "Operator Version"
-              "type" = "string"
-            },
-            {
               "jsonPath" = ".spec.network"
               "name" = "Network"
               "type" = "string"
@@ -43,13 +38,8 @@ resource "kubernetes_manifest" "customresourcedefinition_utxorpcports_demeter_ru
               "type" = "string"
             },
             {
-              "jsonPath" = ".status.endpointUrl"
-              "name" = "Endpoint URL"
-              "type" = "string"
-            },
-            {
-              "jsonPath" = ".status.authenticatedEndpointUrl"
-              "name" = "Authenticated Endpoint URL"
+              "jsonPath" = ".status.grpcEndpointUrl"
+              "name" = "Endpoint"
               "type" = "string"
             },
             {
@@ -65,6 +55,10 @@ resource "kubernetes_manifest" "customresourcedefinition_utxorpcports_demeter_ru
               "properties" = {
                 "spec" = {
                   "properties" = {
+                    "authToken" = {
+                      "nullable" = true
+                      "type" = "string"
+                    }
                     "network" = {
                       "type" = "string"
                     }
@@ -72,17 +66,17 @@ resource "kubernetes_manifest" "customresourcedefinition_utxorpcports_demeter_ru
                       "type" = "string"
                     }
                     "throughputTier" = {
+                      "nullable" = true
                       "type" = "string"
                     }
                     "utxorpcVersion" = {
+                      "nullable" = true
                       "type" = "string"
                     }
                   }
                   "required" = [
                     "network",
                     "operatorVersion",
-                    "throughputTier",
-                    "utxorpcVersion",
                   ]
                   "type" = "object"
                 }
@@ -92,17 +86,13 @@ resource "kubernetes_manifest" "customresourcedefinition_utxorpcports_demeter_ru
                     "authToken" = {
                       "type" = "string"
                     }
-                    "authenticatedEndpointUrl" = {
-                      "nullable" = true
-                      "type" = "string"
-                    }
-                    "endpointUrl" = {
+                    "grpcEndpointUrl" = {
                       "type" = "string"
                     }
                   }
                   "required" = [
                     "authToken",
-                    "endpointUrl",
+                    "grpcEndpointUrl",
                   ]
                   "type" = "object"
                 }

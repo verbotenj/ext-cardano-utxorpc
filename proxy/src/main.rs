@@ -1,11 +1,12 @@
 use auth::AuthBackgroundService;
 use config::Config;
 use dotenv::dotenv;
+use operator::{kube::ResourceExt, UtxoRpcPort};
 use pingora::{
-    listeners::Listeners,
     server::{configuration::Opt, Server},
-    services::{background::background_service, listening::Service},
+    services::background::background_service,
 };
+use prometheus::{opts, register_int_counter_vec};
 use proxy::UtxoRpcProxy;
 use std::{collections::HashMap, fmt::Display, sync::Arc};
 use tokio::sync::RwLock;
@@ -33,17 +34,28 @@ fn main() {
     );
     server.add_service(auth_background_service);
 
-    let tls_proxy_service = Service::with_listeners(
-        "TLS Proxy Service".to_string(),
-        Listeners::tls(
-            &config.proxy_addr,
-            &config.ssl_crt_path,
-            &config.ssl_key_path,
-        )
-        .unwrap(),
-        Arc::new(UtxoRpcProxy::new(state.clone(), config.clone())),
+    let mut utxorpc_http_proxy = pingora::proxy::http_proxy_service(
+        &server.configuration,
+        UtxoRpcProxy::new(state.clone(), config.clone()),
     );
-    server.add_service(tls_proxy_service);
+    let mut tls_settings =
+        pingora::listeners::TlsSettings::intermediate(&config.ssl_crt_path, &config.ssl_key_path)
+            .unwrap();
+
+    tls_settings.enable_h2();
+    utxorpc_http_proxy.add_tls_with_settings(&config.proxy_addr, None, tls_settings);
+    // utxorpc_http_proxy
+    //     .add_tls(
+    //         &config.proxy_addr,
+    //         &config.ssl_crt_path,
+    //         &config.ssl_key_path,
+    //     )
+    //     .unwrap();
+    server.add_service(utxorpc_http_proxy);
+
+    let mut prometheus_service = pingora::services::listening::Service::prometheus_http_service();
+    prometheus_service.add_tcp(&config.prometheus_addr);
+    server.add_service(prometheus_service);
 
     server.run_forever();
 }
@@ -51,6 +63,7 @@ fn main() {
 #[derive(Default)]
 pub struct State {
     consumers: RwLock<HashMap<String, Consumer>>,
+    metrics: Metrics,
 }
 impl State {
     pub async fn get_consumer(&self, key: &str) -> Option<Consumer> {
@@ -63,21 +76,80 @@ impl State {
 pub struct Consumer {
     namespace: String,
     port_name: String,
+    tier: String,
+    key: String,
     network: String,
-    version: String,
-}
-impl Consumer {
-    pub fn new(namespace: String, port_name: String, network: String, version: String) -> Self {
-        Self {
-            namespace,
-            port_name,
-            network,
-            version,
-        }
-    }
 }
 impl Display for Consumer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}.{}", self.namespace, self.port_name)
+    }
+}
+impl From<&UtxoRpcPort> for Consumer {
+    fn from(value: &UtxoRpcPort) -> Self {
+        let network = value.spec.network.to_string();
+        let tier = value
+            .spec
+            .throughput_tier
+            .clone()
+            .unwrap_or("0".to_string());
+        let key = value.status.as_ref().unwrap().auth_token.clone();
+        let namespace = value.metadata.namespace.as_ref().unwrap().clone();
+        let port_name = value.name_any();
+
+        Self {
+            namespace,
+            port_name,
+            tier,
+            key,
+            network,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Metrics {
+    http_total_request: prometheus::IntCounterVec,
+}
+impl Metrics {
+    pub fn new() -> Self {
+        let http_total_request = register_int_counter_vec!(
+            opts!("utxorpc_proxy_total_requests", "Total requests",),
+            &[
+                "consumer",
+                "namespace",
+                "instance",
+                "status_code",
+                "network",
+                "tier"
+            ]
+        )
+        .unwrap();
+
+        Self { http_total_request }
+    }
+
+    pub fn inc_http_total_request(
+        &self,
+        consumer: &Consumer,
+        namespace: &str,
+        instance: &str,
+        status: &u16,
+    ) {
+        self.http_total_request
+            .with_label_values(&[
+                &consumer.to_string(),
+                namespace,
+                instance,
+                &status.to_string(),
+                &consumer.network,
+                &consumer.tier,
+            ])
+            .inc()
+    }
+}
+impl Default for Metrics {
+    fn default() -> Self {
+        Self::new()
     }
 }
