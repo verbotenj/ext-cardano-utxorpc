@@ -16,8 +16,9 @@ module "feature" {
 }
 
 module "configs" {
-  source   = "./configs"
-  for_each = { for network in var.networks : "${network}" => network }
+  depends_on = [kubernetes_namespace_v1.namespace]
+  source     = "./configs"
+  for_each   = { for network in var.networks : "${network}" => network }
 
   namespace = var.namespace
   network   = each.value
@@ -26,28 +27,31 @@ module "configs" {
 
 module "services" {
   depends_on = [kubernetes_namespace_v1.namespace]
-  for_each   = { for network in var.networks : "${network}" => network }
-  source     = "./service"
+  source     = "./services"
 
   namespace = var.namespace
-  network   = each.value
+  networks  = var.networks
 }
 
 module "proxy" {
   depends_on = [kubernetes_namespace_v1.namespace]
   source     = "./proxy"
+  for_each   = { for network in var.networks : "${network}" => network }
 
-  namespace = var.namespace
-  image_tag = var.proxy_image_tag
-  replicas  = var.proxy_replicas
-  resources = var.proxy_resources
+  namespace   = var.namespace
+  network     = each.value
+  image_tag   = var.proxies_image_tag
+  replicas    = var.proxies_replicas
+  resources   = var.proxies_resources
+  tolerations = var.proxies_tolerations
 }
 
 module "cloudflared" {
-  depends_on = [module.proxy]
+  depends_on = [kubernetes_namespace_v1.namespace]
   source     = "./cloudflared"
 
   namespace     = var.namespace
+  networks      = var.networks
   tunnel_id     = var.cloudflared_tunnel_id
   hostname      = "${var.extension_subdomain}.${var.dns_zone}"
   tunnel_secret = var.cloudflared_tunnel_secret
@@ -56,31 +60,44 @@ module "cloudflared" {
   image_tag     = var.cloudflared_image_tag
   replicas      = var.cloudflared_replicas
   resources     = var.cloudflared_resources
+  tolerations   = var.cloudflared_tolerations
 }
 
-module "instances" {
-  depends_on = [module.feature, module.configs]
-  for_each   = var.instances
-  source     = "./instance"
+module "cells" {
+  depends_on = [module.configs, module.feature]
+  for_each   = var.cells
+  source     = "./cell"
 
-  namespace     = var.namespace
-  network       = each.value.network
-  salt          = each.key
-  instance_name = "${each.value.network}-${each.key}"
-  dolos_version = coalesce(each.value.dolos_version, "v0.13.1")
-  replicas      = coalesce(each.value.replicas, 1)
-  resources = coalesce(each.value.resources, {
-    requests = {
-      cpu    = "50m"
-      memory = "512Mi"
+  namespace           = var.namespace
+  salt                = each.key
+  extension_subdomain = var.extension_subdomain
+  dns_zone            = var.dns_zone
+  tolerations = coalesce(each.value.tolerations, [
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/compute-profile"
+      operator = "Equal"
+      value    = "disk-intensive"
+    },
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/compute-arch"
+      operator = "Equal"
+      value    = "arm64"
+    },
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/availability-sla"
+      operator = "Equal"
+      value    = "consistent"
     }
-    limits = {
-      cpu    = "1000m"
-      memory = "512Mi"
-    }
-    storage = {
-      size  = "30Gi"
-      class = "fast"
-    }
-  })
+  ])
+
+  // PVC
+  storage_size  = each.value.pvc.storage_size
+  storage_class = each.value.pvc.storage_class
+  volume_name   = each.value.pvc.volume_name
+
+  // Instances
+  instances = each.value.instances
 }

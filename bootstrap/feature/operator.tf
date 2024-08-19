@@ -80,14 +80,14 @@ resource "kubernetes_deployment_v1" "operator" {
         toleration {
           effect   = "NoSchedule"
           key      = "demeter.run/compute-profile"
-          operator = "Equal"
-          value    = "general-purpose"
+          operator = "Exists"
         }
 
         toleration {
           effect   = "NoSchedule"
           key      = "demeter.run/compute-arch"
-          operator = "Exists"
+          operator = "Equal"
+          value    = "x86"
         }
 
         toleration {

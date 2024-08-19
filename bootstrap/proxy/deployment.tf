@@ -52,6 +52,11 @@ resource "kubernetes_deployment_v1" "utxorpc_proxy" {
           }
 
           env {
+            name  = "NETWORK"
+            value = var.network
+          }
+
+          env {
             name  = "PROXY_NAMESPACE"
             value = var.namespace
           }
@@ -90,29 +95,19 @@ resource "kubernetes_deployment_v1" "utxorpc_proxy" {
         volume {
           name = "certs"
           config_map {
-            name = local.certs_configmap
+            name = var.certs_configmap
           }
         }
 
-        toleration {
-          effect   = "NoSchedule"
-          key      = "demeter.run/compute-profile"
-          operator = "Equal"
-          value    = "general-purpose"
-        }
+        dynamic "toleration" {
+          for_each = var.tolerations
 
-        toleration {
-          effect   = "NoSchedule"
-          key      = "demeter.run/compute-arch"
-          operator = "Equal"
-          value    = "x86"
-        }
-
-        toleration {
-          effect   = "NoSchedule"
-          key      = "demeter.run/availability-sla"
-          operator = "Equal"
-          value    = "consistent"
+          content {
+            effect   = toleration.value.effect
+            key      = toleration.value.key
+            operator = toleration.value.operator
+            value    = toleration.value.value
+          }
         }
       }
     }

@@ -14,21 +14,6 @@ resource "kubernetes_stateful_set_v1" "utxorpc" {
     replicas     = var.replicas
     service_name = "utxorpc"
 
-    volume_claim_template {
-      metadata {
-        name = "data"
-      }
-      spec {
-        access_modes = ["ReadWriteOnce"]
-        resources {
-          requests = {
-            storage = var.resources.storage.size
-          }
-        }
-        storage_class_name = var.resources.storage.class
-      }
-    }
-
     selector {
       match_labels = {
         "demeter.run/instance"        = local.instance
@@ -44,29 +29,32 @@ resource "kubernetes_stateful_set_v1" "utxorpc" {
       }
       spec {
         # @TODO: once the bootstrap command works in non-interactive, we can restore this.
-        init_container {
-          name  = "init"
-          image = "ghcr.io/txpipe/dolos:${var.dolos_version}"
-          args = [
-            "-c",
-            "/etc/config/dolos.toml",
-            "bootstrap",
-            "--download-dir",
-            "/var/data/snapshot",
-          ]
-          resources {
-            limits   = var.resources.limits
-            requests = var.resources.requests
-          }
-          volume_mount {
-            name       = "config"
-            mount_path = "/etc/config"
-          }
-          volume_mount {
-            name       = "data"
-            mount_path = "/var/data"
-          }
-        }
+        # init_container {
+        #   name  = "init"
+        #   image = "ghcr.io/txpipe/dolos:${var.dolos_version}"
+        #   # command = ["sleep", "infinity"]
+        #   args = [
+        #     "-c",
+        #     "/etc/config/dolos.toml",
+        #     "bootstrap",
+        #     "--download-dir",
+        #     "/var/data/${var.network}/snapshot",
+        #     "--skip-if-not-empty",
+        #     # "--skip-download",
+        #   ]
+        #   resources {
+        #     limits   = var.resources.limits
+        #     requests = var.resources.requests
+        #   }
+        #   volume_mount {
+        #     name       = "config"
+        #     mount_path = "/etc/config"
+        #   }
+        #   volume_mount {
+        #     name       = "data"
+        #     mount_path = "/var/data"
+        #   }
+        # }
         container {
           name  = local.instance
           image = "ghcr.io/txpipe/dolos:${var.dolos_version}"
@@ -75,7 +63,6 @@ resource "kubernetes_stateful_set_v1" "utxorpc" {
             "/etc/config/dolos.toml",
             "daemon"
           ]
-          # command = ["sleep", "infinity"]
           resources {
             limits   = var.resources.limits
             requests = var.resources.requests
@@ -97,11 +84,18 @@ resource "kubernetes_stateful_set_v1" "utxorpc" {
             name       = "data"
             mount_path = "/var/data"
           }
+
           volume_mount {
             name       = "config"
             mount_path = "/etc/config"
           }
+        }
 
+        volume {
+          name = "data"
+          persistent_volume_claim {
+            claim_name = var.pvc_name
+          }
         }
 
         volume {
@@ -112,23 +106,15 @@ resource "kubernetes_stateful_set_v1" "utxorpc" {
         }
 
         termination_grace_period_seconds = 180
-        toleration {
-          effect   = "NoSchedule"
-          key      = "demeter.run/compute-profile"
-          operator = "Exists"
-        }
+        dynamic "toleration" {
+          for_each = var.tolerations
 
-        toleration {
-          effect   = "NoSchedule"
-          key      = "demeter.run/compute-arch"
-          operator = "Equal"
-          value    = "arm64"
-        }
-
-        toleration {
-          effect   = "NoSchedule"
-          key      = "demeter.run/availability-sla"
-          operator = "Exists"
+          content {
+            effect   = toleration.value.effect
+            key      = toleration.value.key
+            operator = toleration.value.operator
+            value    = toleration.value.value
+          }
         }
       }
     }

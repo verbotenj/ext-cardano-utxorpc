@@ -2,6 +2,7 @@ use std::env;
 
 #[derive(Debug, Clone)]
 pub struct Config {
+    pub network: String,
     pub proxy_addr: String,
     pub proxy_namespace: String,
     pub prometheus_addr: String,
@@ -10,10 +11,12 @@ pub struct Config {
     pub utxorpc_dns: String,
     pub utxorpc_port: u16,
     pub health_endpoint: String,
+    pub health_pool_interval: std::time::Duration,
 }
 impl Config {
     pub fn new() -> Self {
         Self {
+            network: env::var("NETWORK").expect("NETWORK must be set"),
             proxy_addr: env::var("PROXY_ADDR").expect("PROXY_ADDR must be set"),
             proxy_namespace: env::var("PROXY_NAMESPACE").expect("PROXY_NAMESPACE must be set"),
             prometheus_addr: env::var("PROMETHEUS_ADDR").expect("PROMETHEUS_ADDR must be set"),
@@ -25,7 +28,21 @@ impl Config {
                 .parse()
                 .expect("Unable to parse port."),
             health_endpoint: "/dmtr_health".to_string(),
+            health_pool_interval: std::time::Duration::from_secs(10),
         }
+    }
+
+    pub fn instance(&self) -> String {
+        format!(
+            "{}.{}:{}",
+            self.service(),
+            self.utxorpc_dns,
+            self.utxorpc_port
+        )
+    }
+
+    pub fn service(&self) -> String {
+        format!("utxorpc-{}-grpc", self.network)
     }
 }
 impl Default for Config {

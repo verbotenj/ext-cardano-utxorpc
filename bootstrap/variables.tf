@@ -29,17 +29,17 @@ variable "dns_zone" {
   default = "demeter.run"
 }
 
-// Proxy
-variable "proxy_image_tag" {
+// Proxies
+variable "proxies_image_tag" {
   type = string
 }
 
-variable "proxy_replicas" {
+variable "proxies_replicas" {
   type    = number
   default = 1
 }
 
-variable "proxy_resources" {
+variable "proxies_resources" {
   type = object({
     limits = object({
       cpu    = string
@@ -52,7 +52,7 @@ variable "proxy_resources" {
   })
   default = {
     limits : {
-      cpu : "50m",
+      cpu : "2",
       memory : "250Mi"
     }
     requests : {
@@ -60,6 +60,33 @@ variable "proxy_resources" {
       memory : "250Mi"
     }
   }
+}
+
+variable "proxies_tolerations" {
+  type = list(object({
+    effect   = string
+    key      = string
+    operator = string
+    value    = optional(string)
+  }))
+  default = [
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/compute-profile"
+      operator = "Exists"
+    },
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/compute-arch"
+      operator = "Equal"
+      value    = "x86"
+    },
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/availability-sla"
+      operator = "Exists"
+    }
+  ]
 }
 
 // Cloudflared
@@ -115,25 +142,58 @@ variable "cloudflared_resources" {
   }
 }
 
-// Instances
-variable "instances" {
+variable "cloudflared_tolerations" {
+  type = list(object({
+    effect   = string
+    key      = string
+    operator = string
+    value    = optional(string)
+  }))
+  default = [
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/compute-profile"
+      operator = "Exists"
+    },
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/compute-arch"
+      operator = "Exists"
+    },
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/availability-sla"
+      operator = "Exists"
+    }
+  ]
+}
+
+variable "cells" {
   type = map(object({
-    network       = string
-    replicas      = optional(number)
-    dolos_version = optional(string)
-    resources = optional(object({
-      limits = object({
-        cpu    = string
-        memory = string
-      })
-      requests = object({
-        cpu    = string
-        memory = string
-      })
-      storage = object({
-        size  = string
-        class = string
-      })
+    tolerations = optional(list(object({
+      effect   = string
+      key      = string
+      operator = string
+      value    = string
+    })))
+    pvc = object({
+      storage_class = string
+      storage_size  = string
+      volume_name   = string
+    })
+    instances = map(object({
+      dolos_version = string
+      replicas      = optional(number)
+      resources = optional(object({
+        limits = object({
+          cpu    = string
+          memory = string
+        })
+        requests = object({
+          cpu    = string
+          memory = string
+        })
+      }))
     }))
   }))
 }

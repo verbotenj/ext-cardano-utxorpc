@@ -31,10 +31,18 @@ impl UtxoRpcProxy {
     async fn respond_health(&self, session: &mut Session, ctx: &mut Context) {
         ctx.is_health_request = true;
         session.set_keepalive(None);
-        let header = Box::new(ResponseHeader::build(200, None).unwrap());
+
+        let is_healthy = *self.state.upstream_health.read().await;
+        let (code, message) = if is_healthy {
+            (200, "OK")
+        } else {
+            (500, "UNHEALTHY")
+        };
+
+        let header = Box::new(ResponseHeader::build(code, None).unwrap());
         session.write_response_header(header, true).await.unwrap();
         session
-            .write_response_body(Some(Bytes::from("OK")), true)
+            .write_response_body(Some(Bytes::from(message)), true)
             .await
             .unwrap();
     }
@@ -65,17 +73,19 @@ impl ProxyHttp for UtxoRpcProxy {
         }
 
         let key = self.extract_key(session);
-        let consumer = self.state.get_consumer(&key).await;
 
-        if consumer.is_none() {
-            return session.respond_error(401).await.map(|_| true);
+        ctx.consumer = match self.state.get_consumer(&key).await {
+            Some(consumer) => consumer,
+            None => {
+                return session.respond_error(401).await.map(|_| true);
+            }
+        };
+
+        if ctx.consumer.network != self.config.network {
+            return session.respond_error(404).await.map(|_| true);
         }
 
-        ctx.consumer = consumer.unwrap();
-        ctx.instance = format!(
-            "utxorpc-{}-grpc.{}:{}",
-            ctx.consumer.network, self.config.utxorpc_dns, self.config.utxorpc_port
-        );
+        ctx.instance = self.config.instance();
 
         Ok(false)
     }

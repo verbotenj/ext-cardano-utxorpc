@@ -1,9 +1,13 @@
+locals {
+  name = "cloudflared"
+}
+
 resource "kubernetes_deployment" "cloudflared" {
   wait_for_rollout = false
   depends_on       = [kubernetes_secret.tunnel_credentials]
 
   metadata {
-    name      = "cloudflared"
+    name      = local.name
     namespace = var.namespace
 
     labels = {
@@ -102,23 +106,15 @@ resource "kubernetes_deployment" "cloudflared" {
           }
         }
 
-        toleration {
-          effect   = "NoSchedule"
-          key      = "demeter.run/compute-profile"
-          operator = "Exists"
-        }
+        dynamic "toleration" {
+          for_each = var.tolerations
 
-        toleration {
-          effect   = "NoSchedule"
-          key      = "demeter.run/compute-arch"
-          operator = "Exists"
-        }
-
-        toleration {
-          effect   = "NoSchedule"
-          key      = "demeter.run/availability-sla"
-          operator = "Equal"
-          value    = "consistent"
+          content {
+            effect   = toleration.value.effect
+            key      = toleration.value.key
+            operator = toleration.value.operator
+            value    = toleration.value.value
+          }
         }
       }
     }
