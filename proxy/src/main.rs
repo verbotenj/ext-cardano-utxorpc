@@ -2,7 +2,7 @@ use auth::AuthBackgroundService;
 use config::Config;
 use dotenv::dotenv;
 use health::HealthBackgroundService;
-use operator::{kube::ResourceExt, UtxoRpcPort};
+use operator::{handle_legacy_networks, kube::ResourceExt, UtxoRpcPort};
 use pingora::{
     server::{configuration::Opt, Server},
     services::background::background_service,
@@ -89,7 +89,7 @@ impl Display for Consumer {
 }
 impl From<&UtxoRpcPort> for Consumer {
     fn from(value: &UtxoRpcPort) -> Self {
-        let network = value.spec.network.to_string();
+        let network = handle_legacy_networks(&value.spec.network);
         let tier = value
             .spec
             .throughput_tier
