@@ -10,6 +10,7 @@ on:
       - "proxy/**"
       - ".github/workflows/controller.yml"
       - "operator/**"
+      - "docker/**"
 
 jobs:
   build-images:
