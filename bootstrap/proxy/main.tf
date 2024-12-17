@@ -47,7 +47,7 @@ variable "tolerations" {
       effect   = "NoSchedule"
       key      = "demeter.run/compute-arch"
       operator = "Equal"
-      value    = "x86"
+      value    = "arm64"
     },
     {
       effect   = "NoSchedule"
