@@ -23,7 +23,7 @@ jobs:
             endpoint: demeter-run/ext-cardano-utxorpc-proxy
 
     continue-on-error: true
-    runs-on: macos-latest
+    runs-on: ubuntu-arm
     steps:
       - uses: actions/checkout@v2.3.3
 
