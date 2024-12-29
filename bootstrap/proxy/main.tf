@@ -1,6 +1,6 @@
 locals {
-  name = "proxy-${var.network}"
-  role = "proxy-${var.network}"
+  name = "${var.name}-${var.network}"
+  role = "proxy"
 
   prometheus_port = 9187
   prometheus_addr = "0.0.0.0:${local.prometheus_port}"
@@ -8,8 +8,52 @@ locals {
   proxy_addr      = "0.0.0.0:${local.proxy_port}"
 }
 
+
+variable "certs_secret" {
+  type    = string
+  default = "proxy-certs"
+}
+
+variable "cloud_provider" {
+  type    = string
+  default = "aws"
+}
+
+variable "cluster_issuer" {
+  type    = string
+  default = "letsencrypt"
+}
+
+variable "dns_zone" {
+  type    = string
+  default = "demeter.run"
+}
+
+variable "environment" {
+  type    = string
+  default = null
+}
+
+variable "extension_name" {
+  type = string
+}
+
+variable "healthcheck_port" {
+  type    = number
+  default = null
+}
+
+variable "image_tag" {
+  type = string
+}
+
 variable "namespace" {
   type = string
+}
+
+variable "name" {
+  type    = string
+  default = "proxy"
 }
 
 variable "network" {
@@ -21,13 +65,32 @@ variable "replicas" {
   default = 1
 }
 
-variable "image_tag" {
-  type = string
+variable "versions" {
+  type    = list(string)
+  default = ["2"]
 }
 
-variable "certs_secret" {
-  type    = string
-  default = "proxy-certs"
+variable "resources" {
+  type = object({
+    limits = object({
+      cpu    = string
+      memory = string
+    })
+    requests = object({
+      cpu    = string
+      memory = string
+    })
+  })
+  default = {
+    limits : {
+      cpu : "50m",
+      memory : "250Mi"
+    }
+    requests : {
+      cpu : "50m",
+      memory : "250Mi"
+    }
+  }
 }
 
 variable "tolerations" {
@@ -55,27 +118,4 @@ variable "tolerations" {
       operator = "Exists"
     }
   ]
-}
-
-variable "resources" {
-  type = object({
-    limits = object({
-      cpu    = string
-      memory = string
-    })
-    requests = object({
-      cpu    = string
-      memory = string
-    })
-  })
-  default = {
-    limits : {
-      cpu : "50m",
-      memory : "250Mi"
-    }
-    requests : {
-      cpu : "50m",
-      memory : "250Mi"
-    }
-  }
 }

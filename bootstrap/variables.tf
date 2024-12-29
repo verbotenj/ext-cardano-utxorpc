@@ -4,7 +4,7 @@ variable "namespace" {
 
 variable "networks" {
   type    = list(string)
-  default = ["cardano-mainnet", "cardano-preprod", "cardano-preview", "vector-testnet"]
+  default = ["mainnet", "preprod", "preview", "vector-testnet"]
 }
 
 variable "network_addresses" {
@@ -21,6 +21,7 @@ variable "api_key_salt" {
   type = string
 }
 
+// Proxies
 variable "extension_subdomain" {
   type = string
 }
@@ -29,7 +30,16 @@ variable "dns_zone" {
   default = "demeter.run"
 }
 
-// Proxies
+variable "cloud_provider" {
+  type    = string
+  default = "aws"
+}
+
+variable "cluster_issuer" {
+  type    = string
+  default = "letsencrypt-dns01"
+}
+
 variable "proxies_image_tag" {
   type = string
 }
@@ -38,6 +48,25 @@ variable "proxies_replicas" {
   type    = number
   default = 1
 }
+
+# TODO - not in use yet
+# variable "proxy_green_image_tag" {
+#   type = string
+# }
+
+# variable "proxy_green_replicas" {
+#   type    = number
+#   default = 1
+# }
+
+# variable "proxy_blue_image_tag" {
+#   type = string
+# }
+
+# variable "proxy_blue_replicas" {
+#   type    = number
+#   default = 1
+# }
 
 variable "proxies_resources" {
   type = object({

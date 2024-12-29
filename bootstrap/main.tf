@@ -38,12 +38,17 @@ module "proxy" {
   source     = "./proxy"
   for_each   = { for network in var.networks : "${network}" => network }
 
-  namespace   = var.namespace
-  network     = each.value
-  image_tag   = var.proxies_image_tag
-  replicas    = var.proxies_replicas
-  resources   = var.proxies_resources
-  tolerations = var.proxies_tolerations
+  cloud_provider = var.cloud_provider
+  cluster_issuer = var.cluster_issuer
+  extension_name = var.extension_subdomain
+  dns_zone       = var.dns_zone
+  namespace      = var.namespace
+  name           = "proxy-blue"
+  network        = each.value
+  image_tag      = var.proxies_image_tag
+  replicas       = var.proxies_replicas
+  resources      = var.proxies_resources
+  tolerations    = var.proxies_tolerations
 }
 
 module "cloudflared" {
