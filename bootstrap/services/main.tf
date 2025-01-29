@@ -51,36 +51,3 @@ resource "kubernetes_service_v1" "well_known_service_grpc_web" {
     type = "ClusterIP"
   }
 }
-
-resource "kubernetes_service_v1" "proxies" {
-  for_each = { for network in var.networks : "${network}" => network }
-
-  metadata {
-    name      = "proxy-${each.value}"
-    namespace = var.namespace
-    # annotations = {
-    #   "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type" : "instance"
-    #   "service.beta.kubernetes.io/aws-load-balancer-scheme" : "internet-facing"
-    #   "service.beta.kubernetes.io/aws-load-balancer-type" : "external"
-    #   "service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol" : "HTTPS"
-    #   "service.beta.kubernetes.io/aws-load-balancer-healthcheck-path" : "/dmtr_health"
-    # }
-  }
-
-  spec {
-    # load_balancer_class = "service.k8s.aws/nlb"
-    selector = {
-      role = "proxy-${each.value}"
-    }
-
-    port {
-      name        = "proxy"
-      port        = 8080
-      target_port = 8080
-      protocol    = "TCP"
-    }
-
-    # type = "LoadBalancer"
-    type = "ClusterIP"
-  }
-}

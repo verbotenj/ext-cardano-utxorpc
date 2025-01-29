@@ -46,10 +46,9 @@ pub fn handle_legacy_networks(network: &str) -> String {
 
 pub fn build_hostname(key: &str, network: &str) -> (String, String) {
     let config = get_config();
-    let extension_subdomain = &config.extension_subdomain;
-    let dns_zone = &config.dns_zone;
-    let hostname = format!("{network}.{extension_subdomain}.{dns_zone}");
-    let hostname_key = format!("{key}.{network}.{extension_subdomain}.{dns_zone}");
+    let extension_url_suffix = &config.extension_url_suffix;
+    let hostname = format!("{network}.{extension_url_suffix}");
+    let hostname_key = format!("{key}.{network}.{extension_url_suffix}");
 
     (hostname, hostname_key)
 }

@@ -45,18 +45,13 @@ resource "kubernetes_deployment_v1" "operator" {
           }
 
           env {
-            name  = "EXTENSION_SUBDOMAIN"
-            value = var.extension_subdomain
-          }
-
-          env {
-            name  = "DNS_ZONE"
-            value = var.dns_zone
+            name  = "EXTENSION_URL_SUFFIX"
+            value = var.extension_url_suffix
           }
 
           env {
             name  = "PROMETHEUS_URL"
-            value = "http://prometheus-operated.demeter-system.svc.cluster.local:9090/api/v1"
+            value = var.prometheus_url
           }
 
           env {

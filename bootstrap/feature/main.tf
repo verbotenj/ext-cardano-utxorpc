@@ -10,23 +10,9 @@ variable "api_key_salt" {
   type = string
 }
 
-variable "extension_subdomain" {
+variable "extension_url_suffix" {
   type    = string
-  default = "utxorpc-m0"
-}
-
-variable "certs_secret" {
-  type    = string
-  default = "proxy-certs"
-}
-
-variable "dns_zone" {
-  default = "demeter.run"
-}
-
-variable "include_certs" {
-  type    = bool
-  default = true
+  default = "utxorpc-m1.demeter.run"
 }
 
 variable "metrics_delay" {
@@ -37,4 +23,9 @@ variable "metrics_delay" {
 variable "metrics_step" {
   description = "the metrics prometheus step"
   default     = "10s"
+}
+
+variable "prometheus_url" {
+  type    = string
+  default = "http://prometheus-operated.demeter-system.svc.cluster.local:9090/api/v1"
 }

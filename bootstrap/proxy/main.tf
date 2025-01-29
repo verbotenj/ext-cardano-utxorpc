@@ -25,9 +25,9 @@ variable "image_tag" {
   type = string
 }
 
-variable "certs_secret" {
+variable "extension_url_suffix" {
   type    = string
-  default = "proxy-certs"
+  default = "utxorpc-m1.demeter.run"
 }
 
 variable "tolerations" {

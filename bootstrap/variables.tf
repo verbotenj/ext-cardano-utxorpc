@@ -21,12 +21,13 @@ variable "api_key_salt" {
   type = string
 }
 
-variable "extension_subdomain" {
+variable "extension_url_suffix" {
   type = string
 }
 
-variable "dns_zone" {
-  default = "demeter.run"
+variable "prometheus_url" {
+  type    = string
+  default = "http://prometheus-operated.demeter-system.svc.cluster.local:9090/api/v1"
 }
 
 // Proxies
@@ -89,92 +90,13 @@ variable "proxies_tolerations" {
   ]
 }
 
-// Cloudflared
-variable "cloudflared_tunnel_id" {
-  type = string
-}
-
-variable "cloudflared_tunnel_secret" {
-  type        = string
-  description = "TunnelSecret, written on credentials file."
-}
-
-variable "cloudflared_account_tag" {
-  type        = string
-  description = "AccountTag, written on credentials file."
-}
-
-variable "cloudflared_metrics_port" {
-  type    = number
-  default = 2000
-}
-
-variable "cloudflared_image_tag" {
-  type    = string
-  default = "latest"
-}
-
-variable "cloudflared_replicas" {
-  type    = number
-  default = 2
-}
-
-variable "cloudflared_resources" {
-  type = object({
-    limits = object({
-      cpu    = string
-      memory = string
-    })
-    requests = object({
-      cpu    = string
-      memory = string
-    })
-  })
-  default = {
-    limits : {
-      cpu : "1",
-      memory : "500Mi"
-    }
-    requests : {
-      cpu : "50m",
-      memory : "500Mi"
-    }
-  }
-}
-
-variable "cloudflared_tolerations" {
-  type = list(object({
-    effect   = string
-    key      = string
-    operator = string
-    value    = optional(string)
-  }))
-  default = [
-    {
-      effect   = "NoSchedule"
-      key      = "demeter.run/compute-profile"
-      operator = "Exists"
-    },
-    {
-      effect   = "NoSchedule"
-      key      = "demeter.run/compute-arch"
-      operator = "Exists"
-    },
-    {
-      effect   = "NoSchedule"
-      key      = "demeter.run/availability-sla"
-      operator = "Exists"
-    }
-  ]
-}
-
 variable "cells" {
   type = map(object({
     tolerations = optional(list(object({
       effect   = string
       key      = string
       operator = string
-      value    = string
+      value    = optional(string)
     })))
     pvc = object({
       storage_class = string

@@ -95,7 +95,7 @@ resource "kubernetes_deployment_v1" "utxorpc_proxy" {
         volume {
           name = "certs"
           secret {
-            secret_name = var.certs_secret
+            secret_name = local.cert_secret_name
           }
         }
 
