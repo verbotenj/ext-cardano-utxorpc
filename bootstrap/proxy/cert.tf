@@ -4,7 +4,7 @@ locals {
     "${var.network}.${var.extension_url_suffix}",
     "*.${var.network}.${var.extension_url_suffix}"
   ]
-  cert_secret_name = "${var.extension_name}-${var.network}-proxy-wildcard-tls"
+  cert_secret_name = "utxorpc-${var.network}-proxy-wildcard-tls"
 }
 
 resource "kubernetes_manifest" "certificate_cluster_wildcard_tls" {
