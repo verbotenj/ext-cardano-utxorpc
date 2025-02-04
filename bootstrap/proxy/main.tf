@@ -30,6 +30,11 @@ variable "extension_url_suffix" {
   default = "utxorpc-m1.demeter.run"
 }
 
+variable "certs_secret_name" {
+  type    = string
+  default = null
+}
+
 variable "tolerations" {
   type = list(object({
     effect   = string
