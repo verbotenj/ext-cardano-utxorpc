@@ -25,9 +25,13 @@ variable "image_tag" {
   type = string
 }
 
-variable "extension_url_suffix" {
-  type    = string
-  default = "utxorpc-m1.demeter.run"
+variable "extension_url" {
+  type = string
+}
+
+variable "extra_extension_urls" {
+  type    = list(string)
+  default = []
 }
 
 variable "certs_secret_name" {

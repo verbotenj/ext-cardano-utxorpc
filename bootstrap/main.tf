@@ -37,13 +37,13 @@ module "proxies" {
   source     = "./proxy"
   for_each   = { for network in var.networks : "${network}" => network }
 
-  namespace            = var.namespace
-  network              = each.value
-  image_tag            = var.proxies_image_tag
-  replicas             = var.proxies_replicas
-  resources            = var.proxies_resources
-  tolerations          = var.proxies_tolerations
-  extension_url_suffix = var.extension_url_suffix
+  namespace     = var.namespace
+  network       = each.value
+  image_tag     = var.proxies_image_tag
+  replicas      = var.proxies_replicas
+  resources     = var.proxies_resources
+  tolerations   = var.proxies_tolerations
+  extension_url = var.extension_url_per_network[each.key]
 }
 
 module "cells" {

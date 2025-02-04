@@ -1,9 +1,6 @@
 locals {
   # Add the extra URL to the list of generated URLs
-  dns_names = [
-    "${var.network}.${var.extension_url_suffix}",
-    "*.${var.network}.${var.extension_url_suffix}"
-  ]
+  dns_names        = concat([var.extension_url], var.extra_extension_urls)
   cert_secret_name = "utxorpc-${var.network}-proxy-wildcard-tls"
 }
 
