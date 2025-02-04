@@ -8,10 +8,10 @@ module "feature" {
   depends_on = [kubernetes_namespace_v1.namespace]
   source     = "./feature"
 
-  namespace            = var.namespace
-  operator_image_tag   = var.operator_image_tag
-  extension_url_suffix = var.extension_url_suffix
-  api_key_salt         = var.api_key_salt
+  namespace                 = var.namespace
+  operator_image_tag        = var.operator_image_tag
+  extension_url_per_network = var.extension_url_per_network
+  api_key_salt              = var.api_key_salt
 }
 
 module "configs" {

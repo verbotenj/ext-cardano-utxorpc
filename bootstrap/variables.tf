@@ -4,7 +4,7 @@ variable "namespace" {
 
 variable "networks" {
   type    = list(string)
-  default = ["cardano-mainnet", "cardano-preprod", "cardano-preview", "vector-testnet"]
+  default = ["cardano-mainnet", "cardano-preprod", "cardano-preview"]
 }
 
 variable "network_addresses" {
@@ -21,8 +21,8 @@ variable "api_key_salt" {
   type = string
 }
 
-variable "extension_url_suffix" {
-  type = string
+variable "extension_url_per_network" {
+  type = map(string)
 }
 
 variable "prometheus_url" {

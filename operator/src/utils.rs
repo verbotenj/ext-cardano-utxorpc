@@ -45,10 +45,12 @@ pub fn handle_legacy_networks(network: &str) -> String {
 }
 
 pub fn build_hostname(key: &str, network: &str) -> (String, String) {
-    let config = get_config();
-    let extension_url_suffix = &config.extension_url_suffix;
-    let hostname = format!("{network}.{extension_url_suffix}");
-    let hostname_key = format!("{key}.{network}.{extension_url_suffix}");
+    let hostname = get_config()
+        .extension_url_per_network
+        .get(network)
+        .unwrap() // Risky but we know it's there
+        .to_string();
+    let hostname_key = format!("{key}.{hostname}");
 
     (hostname, hostname_key)
 }

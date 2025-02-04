@@ -10,9 +10,8 @@ variable "api_key_salt" {
   type = string
 }
 
-variable "extension_url_suffix" {
-  type    = string
-  default = "utxorpc-m1.demeter.run"
+variable "extension_url_per_network" {
+  type = map(string)
 }
 
 variable "metrics_delay" {
